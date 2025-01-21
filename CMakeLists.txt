@@ -6,9 +6,15 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
+# Enable MSVC runtime library flags selection
+cmake_policy(SET CMP0091 NEW)
+
 project ("ManeleMax")
 
 add_executable (ManeleMax "src/main.cpp" "src/window.cpp")
+
+# Statically link MSVC runtime library
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 target_compile_features(ManeleMax PRIVATE cxx_std_23)
 
