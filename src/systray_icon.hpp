@@ -6,7 +6,7 @@
 #include <Windows.h>
 #include <shellapi.h>
 
-#include "win32_error.h"
+#include "win32_error.hpp"
 
 namespace manelemax
 {

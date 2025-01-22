@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "systray_icon.h"
+#include "systray_icon.hpp"
 #include "resource.h"
 
 namespace manelemax
@@ -9,6 +9,7 @@ namespace manelemax
 // {9C578A2D-A01F-4C27-BF91-F0B7E0EE4BB6}
 static constexpr GUID g_systray_icon_guid =
     {0x9c578a2d, 0xa01f, 0x4c27, {0xbf, 0x91, 0xf0, 0xb7, 0xe0, 0xee, 0x4b, 0xb6}};
+
 static constexpr UINT g_systray_notif_msg     = WM_USER + 0x100;
 static constexpr WORD g_context_menu_cmd_exit = 101;
 

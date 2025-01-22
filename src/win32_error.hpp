@@ -13,4 +13,10 @@ struct win32_error
     DWORD            code;
 };
 
+struct win32_com_error
+{
+    std::string_view function;
+    HRESULT          code;
+};
+
 }  // namespace manelemax

@@ -11,7 +11,7 @@ cmake_policy(SET CMP0091 NEW)
 
 project ("ManeleMax")
 
-add_executable (ManeleMax "src/main.cpp" "res/resource.rc" "src/systray_icon.cpp" )
+add_executable (ManeleMax "src/main.cpp" "res/resource.rc" "src/systray_icon.cpp" "src/volume_control.cpp")
 
 # Statically link MSVC runtime library
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
