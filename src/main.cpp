@@ -3,7 +3,7 @@
 
 #include <Windows.h>
 
-#include "window.h"
+#include "systray_icon.h"
 #include "win32_error.h"
 
 namespace manelemax
@@ -28,15 +28,14 @@ int WINAPI WinMain(
     const int /*nShowCmd*/
 )
 {
-    auto wnd = manelemax::window::make(hInstance);
-    if (!wnd.has_value())
+    auto tray = manelemax::systray_icon::make(hInstance);
+    if (!tray.has_value())
     {
-        manelemax::display_win32_error(wnd.error());
+        manelemax::display_win32_error(tray.error());
         return EXIT_FAILURE;
     }
 
-    wnd->set_visible(true);
-    wnd->process_messages();
+    tray->process_messages();
 
     return EXIT_SUCCESS;
 }
