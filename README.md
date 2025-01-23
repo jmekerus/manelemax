@@ -4,6 +4,8 @@
 
 *ManeleMax* is a Windows application that, while running, it forces the system volume at 100% if you are playing manele on your computer. If you are playing any type of music other than manele, the system volume is forced at a low level (25%).  It works by leveraging the [**Windows.Media.Control**](https://learn.microsoft.com/en-us/uwp/api/windows.media.control?view=winrt-26100) API from WinRT, so it will detect songs that play from programs which are using said API (i.e. any modern web browser). This is also the reason why it will not work on any Windows older than 10 (version 1809).
 
+If you encounter a bug or have suggestions for improvements, feel free to submit an Issue or a Pull Request.
+
 ### How to build
 
 From a developer command prompt, run the following commands:
