@@ -50,51 +50,65 @@ int WINAPI WinMain(
     constexpr float normal_mode_volume = 0.25f;
     constexpr float max_mode_volume    = 1.0f;
 
-    bool  force_unmute   = false;
-    bool  force_volume   = false;
-    float current_volume = normal_mode_volume;
+    struct volume_listener : public manelemax::volume_control::listener
+    {
+        void on_volume_changed(const float vol) override
+        {
+            if (force_volume)
+            {
+                vol_ctrl->set_volume(current_volume);
+            }
+        }
+
+        void on_muted_state_changed(const bool muted) override
+        {
+            if (muted && force_unmute)
+            {
+                vol_ctrl->set_muted(false);
+            }
+        }
+
+        manelemax::volume_control* vol_ctrl       = nullptr;
+        bool                       force_unmute   = false;
+        bool                       force_volume   = false;
+        float                      current_volume = normal_mode_volume;
+    };
+
+    volume_listener vol_lsn;
+    vol_lsn.vol_ctrl = std::addressof(*vol_ctrl);
+
+    if (const auto result = vol_ctrl->set_listener(&vol_lsn); !result.has_value())
+    {
+        manelemax::display_win32_error(result.error());
+        return EXIT_FAILURE;
+    }
 
     const auto update_volume_settings =
         [&](const std::optional<manelemax::system_media_properties_notifier::properties>&
                 media_props) {
             if (!media_props.has_value())
             {
-                force_unmute = false;
-                force_volume = false;
+                vol_lsn.force_unmute = false;
+                vol_lsn.force_volume = false;
                 return;
             }
 
             if (media_props->title.contains(L"Nicolae Guta"))
             {
-                current_volume = max_mode_volume;
-                force_unmute   = true;
-                force_volume   = true;
+                vol_lsn.current_volume = max_mode_volume;
+                vol_lsn.force_unmute   = true;
+                vol_lsn.force_volume   = true;
                 vol_ctrl->set_muted(false);
-                vol_ctrl->set_volume(current_volume);
+                vol_ctrl->set_volume(vol_lsn.current_volume);
             }
             else
             {
-                current_volume = normal_mode_volume;
-                force_unmute   = false;
-                force_volume   = true;
-                vol_ctrl->set_volume(current_volume);
+                vol_lsn.current_volume = normal_mode_volume;
+                vol_lsn.force_unmute   = false;
+                vol_lsn.force_volume   = true;
+                vol_ctrl->set_volume(vol_lsn.current_volume);
             }
         };
-
-    vol_ctrl->register_callback(
-        [&](const float vol) {
-            if (force_volume)
-            {
-                vol_ctrl->set_volume(current_volume);
-            }
-        },
-        [&](const bool muted) {
-            if (force_unmute)
-            {
-                vol_ctrl->set_muted(false);
-            }
-        }
-    );
 
     struct media_listener : public manelemax::system_media_properties_notifier::listener
     {

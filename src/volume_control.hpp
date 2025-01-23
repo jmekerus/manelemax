@@ -20,10 +20,15 @@ public:
     std::expected<void, win32_com_error> set_muted(bool muted) const;
     std::expected<void, win32_com_error> set_volume(float vol) const;
 
-    std::expected<void, win32_com_error> register_callback(
-        std::function<void(float)>&& volume_changed      = nullptr,
-        std::function<void(bool)>&&  muted_state_changed = nullptr
-    );
+    struct listener
+    {
+        virtual ~listener() = default;
+
+        virtual void on_volume_changed(float vol)       = 0;
+        virtual void on_muted_state_changed(bool muted) = 0;
+    };
+
+    std::expected<void, win32_com_error> set_listener(listener* lsn);
 
 private:
     volume_control() noexcept = default;

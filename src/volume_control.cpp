@@ -1,5 +1,3 @@
-#include <memory>
-
 #include "volume_control.hpp"
 
 namespace manelemax
@@ -8,14 +6,9 @@ namespace manelemax
 class volume_control_callback : public IAudioEndpointVolumeCallback
 {
 public:
-    volume_control_callback(
-        const GUID&                       guid_context,
-        const std::function<void(float)>& volume_changed,
-        const std::function<void(bool)>&  muted_state_changed
-    )
+    volume_control_callback(const GUID& guid_context, volume_control::listener* const lsn)
         : guid_context_ {guid_context}
-        , volume_changed_cb_ {volume_changed}
-        , muted_state_changed_cb_ {muted_state_changed}
+        , lsn_ {lsn}
     {
     }
 
@@ -65,23 +58,19 @@ public:
             return S_OK;
         }
 
-        if (volume_changed_cb_)
+        if (lsn_)
         {
-            volume_changed_cb_(pNotify->fMasterVolume);
-        }
-        if (muted_state_changed_cb_)
-        {
-            muted_state_changed_cb_(pNotify->bMuted);
+            lsn_->on_volume_changed(pNotify->fMasterVolume);
+            lsn_->on_muted_state_changed(pNotify->bMuted);
         }
 
         return S_OK;
     }
 
 private:
-    GUID                       guid_context_;
-    std::function<void(float)> volume_changed_cb_;
-    std::function<void(bool)>  muted_state_changed_cb_;
-    ULONG                      ref_count_ {1};
+    GUID                      guid_context_;
+    volume_control::listener* lsn_;
+    ULONG                     ref_count_ {1};
 };
 
 std::expected<volume_control, win32_com_error> volume_control::make()
@@ -164,12 +153,9 @@ std::expected<void, win32_com_error> volume_control::set_volume(float vol) const
     return {};
 }
 
-std::expected<void, win32_com_error> volume_control::register_callback(
-    std::function<void(float)>&& volume_changed,
-    std::function<void(bool)>&&  muted_state_changed
-)
+std::expected<void, win32_com_error> volume_control::set_listener(listener* const lsn)
 {
-    if (volume_changed == nullptr && muted_state_changed == nullptr)
+    if (lsn == nullptr)
     {
         return {};
     }
@@ -180,11 +166,7 @@ std::expected<void, win32_com_error> volume_control::register_callback(
         return {};
     }
 
-    com_ptr<IAudioEndpointVolumeCallback> cb_obj {new volume_control_callback {
-        guid_context_,
-        std::move(volume_changed),
-        std::move(muted_state_changed)
-    }};
+    com_ptr<IAudioEndpointVolumeCallback> cb_obj {new volume_control_callback {guid_context_, lsn}};
 
     if (const HRESULT result = audio_endpoint_volume_->RegisterControlChangeNotify(cb_obj.get());
         FAILED(result))
