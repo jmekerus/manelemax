@@ -3,6 +3,7 @@
 #include "auto_dj.hpp"
 #include "volume_control.hpp"
 #include "system_media_properties_notifier.hpp"
+#include "cool_artists.hpp"
 
 namespace manelemax
 {
