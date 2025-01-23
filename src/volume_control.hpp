@@ -1,7 +1,6 @@
 #pragma once
 
 #include <expected>
-#include <memory>
 #include <functional>
 
 #include <endpointvolume.h>
@@ -22,8 +21,8 @@ public:
     std::expected<void, win32_com_error> set_volume(float vol) const;
 
     std::expected<void, win32_com_error> register_callback(
-        std::function<void(float)> volume_changed      = nullptr,
-        std::function<void(bool)>  muted_state_changed = nullptr
+        std::function<void(float)>&& volume_changed      = nullptr,
+        std::function<void(bool)>&&  muted_state_changed = nullptr
     );
 
 private:
