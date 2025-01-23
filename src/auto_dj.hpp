@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <expected>
+#include <string>
 
 #include "win32_error.hpp"
 
@@ -17,6 +18,8 @@ public:
     auto_dj& operator=(auto_dj&&);
 
     ~auto_dj();
+
+    std::string current_match() const;
 
 private:
     struct impl;

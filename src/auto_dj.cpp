@@ -1,6 +1,7 @@
 #include <optional>
 #include <unordered_set>
 #include <algorithm>
+#include <mutex>
 
 #include "auto_dj.hpp"
 #include "volume_control.hpp"
@@ -91,11 +92,15 @@ struct auto_dj::impl
         {
             force_unmute = false;
             force_volume = false;
+            std::lock_guard lock {current_match_mutex};
+            current_match.clear();
             return;
         }
 
-        if (!keyword_match(media_props->artist).empty() ||
-            !keyword_match(media_props->title).empty())
+        std::string match;
+
+        if (!(match = keyword_match(media_props->artist)).empty() ||
+            !(match = keyword_match(media_props->title)).empty())
         {
             current_volume = max_mode_volume;
             force_unmute   = true;
@@ -110,6 +115,9 @@ struct auto_dj::impl
             force_volume   = true;
             vol_ctrl->set_volume(current_volume);
         }
+
+        std::lock_guard lock {current_match_mutex};
+        current_match = match;
     }
 
     std::string keyword_match(const std::wstring& wstr) const
@@ -152,6 +160,8 @@ struct auto_dj::impl
 
     volume_listener vol_lsn {};
     media_listener  media_lsn {};
+    std::string     current_match {};
+    std::mutex      current_match_mutex {};
 
     std::unordered_set<std::string_view> keywords_set;
 };
@@ -167,6 +177,12 @@ std::expected<auto_dj, win32_com_error> auto_dj::make()
     }
 
     return instance;
+}
+
+std::string auto_dj::current_match() const
+{
+    std::lock_guard lock {impl_->current_match_mutex};
+    return impl_->current_match;
 }
 
 auto_dj::auto_dj(auto_dj&&)            = default;

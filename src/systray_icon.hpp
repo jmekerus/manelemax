@@ -2,6 +2,8 @@
 
 #include <expected>
 #include <memory>
+#include <functional>
+#include <string>
 
 #include <Windows.h>
 #include <shellapi.h>
@@ -41,6 +43,11 @@ public:
 
     void process_messages();
 
+    static void set_current_match_fn(std::function<std::string()>&& fn)
+    {
+        current_match_fn_ = std::move(fn);
+    }
+
 private:
     systray_icon() noexcept = default;
 
@@ -50,6 +57,8 @@ private:
 
     HWND                             hWnd_ {nullptr};
     std::unique_ptr<NOTIFYICONDATAA> nidata_ {nullptr};
+
+    static std::function<std::string()> current_match_fn_;
 };
 
 }  // namespace manelemax

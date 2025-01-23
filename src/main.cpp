@@ -53,6 +53,7 @@ int WINAPI WinMain(
         return EXIT_FAILURE;
     }
 
+    tray->set_current_match_fn([&auto_dj_obj] { return auto_dj_obj->current_match(); });
     tray->process_messages();
 
     return EXIT_SUCCESS;

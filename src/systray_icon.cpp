@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <format>
 
 #include "systray_icon.hpp"
 #include "resource.h"
@@ -12,6 +13,8 @@ static constexpr GUID g_systray_icon_guid =
 
 static constexpr UINT g_systray_notif_msg     = WM_USER + 0x100;
 static constexpr WORD g_context_menu_cmd_exit = 101;
+
+std::function<std::string()> systray_icon::current_match_fn_;
 
 std::expected<systray_icon, win32_error> systray_icon::make(const HINSTANCE hInstance)
 {
@@ -204,6 +207,26 @@ void systray_icon::display_context_menu(const HWND hWnd)
     if (!hMenu)
     {
         return;
+    }
+
+    if (current_match_fn_)
+    {
+        const std::string current_match = current_match_fn_();
+        const std::string menu_text     = current_match.empty() ?
+                                              "No manele playing" :
+                                              std::format("Match found: {}", current_match);
+
+        if (::InsertMenuA(
+                hMenu,
+                -1,
+                MF_BYPOSITION | MF_STRING | MF_GRAYED,
+                g_context_menu_cmd_exit,
+                menu_text.c_str()
+            ) == FALSE)
+        {
+            ::DestroyMenu(hMenu);
+            return;
+        }
     }
 
     if (::InsertMenuA(hMenu, -1, MF_BYPOSITION | MF_STRING, g_context_menu_cmd_exit, "Exit") ==
