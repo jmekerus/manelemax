@@ -51,9 +51,9 @@ public:
 private:
     systray_icon() noexcept = default;
 
-    static LRESULT window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    static void    display_context_menu(HWND hWnd);
-    static void    context_menu_cmd(HWND hWnd, WORD cmd);
+    static LRESULT WINAPI window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    static void           display_context_menu(HWND hWnd);
+    static void           context_menu_cmd(HWND hWnd, WORD cmd);
 
     HWND                             hWnd_ {nullptr};
     std::unique_ptr<NOTIFYICONDATAA> nidata_ {nullptr};

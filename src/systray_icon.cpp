@@ -7,10 +7,6 @@
 namespace manelemax
 {
 
-// {9C578A2D-A01F-4C27-BF91-F0B7E0EE4BB6}
-static constexpr GUID g_systray_icon_guid =
-    {0x9c578a2d, 0xa01f, 0x4c27, {0xbf, 0x91, 0xf0, 0xb7, 0xe0, 0xee, 0x4b, 0xb6}};
-
 static constexpr UINT g_systray_notif_msg     = WM_USER + 0x100;
 static constexpr WORD g_context_menu_cmd_exit = 101;
 
@@ -24,12 +20,19 @@ std::expected<systray_icon, win32_error> systray_icon::make(const HINSTANCE hIns
     bool cleanup_window_class = false;
     bool cleanup_notifyicon   = false;
     HWND hWnd                 = nullptr;
-    auto nidata               = std::make_unique<NOTIFYICONDATAA>();
+
+    NOTIFYICONDATAA nidata {};
+    nidata.cbSize           = sizeof(NOTIFYICONDATAA);
+    nidata.uID              = 1;
+    nidata.uFlags           = NIF_ICON | NIF_TIP | NIF_MESSAGE;
+    nidata.uVersion         = NOTIFYICON_VERSION_4;
+    nidata.uCallbackMessage = g_systray_notif_msg;
+    std::copy_n(tooltip_text, sizeof(tooltip_text) / sizeof(char), nidata.szTip);
 
     const auto do_cleanup = [&] {
         if (cleanup_notifyicon)
         {
-            ::Shell_NotifyIconA(NIM_DELETE, nidata.get());
+            ::Shell_NotifyIconA(NIM_DELETE, &nidata);
         }
         if (hWnd)
         {
@@ -81,34 +84,26 @@ std::expected<systray_icon, win32_error> systray_icon::make(const HINSTANCE hIns
         return std::unexpected {win32_error {"LoadIconA", ::GetLastError()}};
     }
 
-    nidata->cbSize           = sizeof(NOTIFYICONDATAA);
-    nidata->hWnd             = hWnd;
-    nidata->uFlags           = NIF_ICON | NIF_TIP | NIF_GUID | NIF_MESSAGE;
-    nidata->hIcon            = hIcon;
-    nidata->uVersion         = NOTIFYICON_VERSION_4;
-    nidata->guidItem         = g_systray_icon_guid;
-    nidata->uCallbackMessage = g_systray_notif_msg;
-    std::copy_n(tooltip_text, sizeof(tooltip_text) / sizeof(char), nidata->szTip);
+    nidata.hWnd  = hWnd;
+    nidata.hIcon = hIcon;
 
-    // Try to remove the icon in case it was not removed during the last run
-    ::Shell_NotifyIconA(NIM_DELETE, nidata.get());
-
-    if (::Shell_NotifyIconA(NIM_ADD, nidata.get()) == FALSE)
+    if (::Shell_NotifyIconA(NIM_ADD, &nidata) == FALSE)
     {
         do_cleanup();
         return std::unexpected {win32_error {"Shell_NotifyIconA", ::GetLastError()}};
     }
     cleanup_notifyicon = true;
 
-    if (::Shell_NotifyIconA(NIM_SETVERSION, nidata.get()) == FALSE)
+    if (::Shell_NotifyIconA(NIM_SETVERSION, &nidata) == FALSE)
     {
         do_cleanup();
         return std::unexpected {win32_error {"Shell_NotifyIconA", ::GetLastError()}};
     }
 
     systray_icon instance;
-    instance.nidata_ = std::move(nidata);
-    instance.hWnd_   = hWnd;
+    instance.nidata_  = std::make_unique<NOTIFYICONDATAA>();
+    *instance.nidata_ = nidata;
+    instance.hWnd_    = hWnd;
 
     return instance;
 }
@@ -140,8 +135,7 @@ void systray_icon::process_messages()
     }
 }
 
-LRESULT
-systray_icon::window_proc(
+LRESULT WINAPI systray_icon::window_proc(
     const HWND   hWnd,
     const UINT   uMsg,
     const WPARAM wParam,
