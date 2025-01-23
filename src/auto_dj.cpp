@@ -1,9 +1,12 @@
 #include <optional>
+#include <unordered_set>
+#include <algorithm>
 
 #include "auto_dj.hpp"
 #include "volume_control.hpp"
 #include "system_media_properties_notifier.hpp"
-#include "cool_artists.hpp"
+#include "keywords.hpp"
+#include "string_utils.hpp"
 
 namespace manelemax
 {
@@ -73,6 +76,8 @@ struct auto_dj::impl
         media_lsn.parent = this;
         media_props_notifier.set_listener(&media_lsn);
 
+        keywords_set.insert_range(g_keywords);
+
         update_volume_settings(media_props_notifier.get_media_props());
 
         return {};
@@ -89,7 +94,8 @@ struct auto_dj::impl
             return;
         }
 
-        if (media_props->title.contains(L"Nicolae Guta"))
+        if (!keyword_match(media_props->artist).empty() ||
+            !keyword_match(media_props->title).empty())
         {
             current_volume = max_mode_volume;
             force_unmute   = true;
@@ -106,6 +112,34 @@ struct auto_dj::impl
         }
     }
 
+    std::string keyword_match(const std::wstring& wstr) const
+    {
+        constexpr size_t max_words = 4;
+
+        if (wstr.empty())
+        {
+            return "";
+        }
+
+        std::string str = stringutils::remove_ro_diacritics(wstr);
+
+        const auto to_search = stringutils::all_word_aligned_substrings(
+            stringutils::to_lower(stringutils::keep_alpha_and_spaces(str)),
+            max_words
+        );
+
+        if (const auto it = std::ranges::find_if(
+                to_search,
+                [this](const std::string& s) { return keywords_set.contains(s); }
+            );
+            it != to_search.end())
+        {
+            return *it;
+        }
+
+        return "";
+    }
+
     std::optional<volume_control>    vol_ctrl {std::nullopt};
     system_media_properties_notifier media_props_notifier {};
 
@@ -118,6 +152,8 @@ struct auto_dj::impl
 
     volume_listener vol_lsn {};
     media_listener  media_lsn {};
+
+    std::unordered_set<std::string_view> keywords_set;
 };
 
 std::expected<auto_dj, win32_com_error> auto_dj::make()
