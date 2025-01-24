@@ -124,6 +124,9 @@ constexpr std::array g_keywords {
     "viper production"sv,
     "autenticmusicromania"sv,
     "danezu music"sv,
+    "ticy"sv,
+    "adrian norocel"sv,
+    "█▬█ █ ▀█▀"sv
 };
 
 }  // namespace manelemax
